@@ -3,7 +3,7 @@ using ShipmentData.Interfaces;
 
 namespace ShipmentData.Models
 {
-    public class WeserSummaryModel : ISummary
+    public class WeserSummaryModel : ISummaryModel
     {
         [DisplayName("PIC_SN")]
         public string SN { get; set; }
@@ -33,7 +33,7 @@ namespace ShipmentData.Models
         public decimal? ER { get; set; }
     }
 
-    public class DenaliSummaryModel : ISummary
+    public class DenaliSummaryModel : ISummaryModel
     {
         [DisplayName("芯片编号")]
         public string SN { get; set; }

@@ -1,7 +1,7 @@
 using System.Diagnostics;
+using System.Reflection;
 using ShipmentData.Interfaces;
 using ShipmentData.Models;
-using ShipmentData.Utils;
 
 namespace ShipmentData
 {
@@ -34,31 +34,22 @@ namespace ShipmentData
                 string filePath = txtShipmentDataPath.Text;
                 string summaryFilePath = txtSummaryPath.Text;
                 var product = GetSelectedRadioButtonValue(gbProduct).ToUpper();
-                if (product == "WESER")
+
+                IProductFactory factory = product switch
                 {
-                    var dataList = ExcelUtil.ReadShipmentDataFile<WeserModel>(filePath);
-                    var summaryList = ExcelUtil.ReadSummaryFile<WeserSummaryModel>(summaryFilePath);
-                    foreach (var data in dataList)
-                    {
-                        GetSummaryData(data, summaryList);
-                    }
-                    ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList);
-                }
-                else if (product == "DENALI")
-                {
-                    var dataList = ExcelUtil.ReadShipmentDataFile<DenaliModel>(filePath);
-                    var summaryList = ExcelUtil.ReadSummaryFile<DenaliSummaryModel>(summaryFilePath);
-                    foreach (var data in dataList)
-                    {
-                        GetSummaryData(data, summaryList);
-                    }
-                    ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList);
-                }
+                    "WESER" => new WeserFactory(),
+                    "DENALI" => new DenaliFactory(),
+                    _ => throw new InvalidOperationException("未找到对应的产品类型！.")
+                };
+
+                var dataList = factory.ReadShipmentDataFile(filePath);
+                var summaryList = factory.ReadSummaryFile(summaryFilePath);
+                var productList = factory.ProcessSummaryData(dataList, summaryList);
+                factory.WriteBackToShipmentDataFile(filePath, productList);
 
                 MessageBox.Show("处理完成，即将打开文件");
                 ClearText();
                 OpenFile(filePath);
-
             }
             catch (Exception ex)
             {
@@ -80,41 +71,6 @@ namespace ShipmentData
                 throw new Exception("请选择出货数据表文件的路径！");
             if (!File.Exists(txtShipmentDataPath.Text))
                 throw new Exception("选择的出货数据表文件不存在！");
-        }
-
-        private void GetSummaryData<TProduct, TSummary>(TProduct product, List<TSummary> list)
-                where TProduct : IProduct
-                where TSummary : ISummary
-        {
-            var summaryRecord = list.Where(summary => summary.SN == product.SN && $"CH{summary.Channel.Replace("CH", "")}" == product.Channel).FirstOrDefault();
-            if (summaryRecord == null)
-            {
-                throw new Exception($"未找到SN：{product.SN}, Channel:{product.Channel}的Summary数据!");
-            }
-            var sourceProperties = typeof(TSummary).GetProperties().ToDictionary(prop => prop.Name, prop => prop);
-            var targetProperties = typeof(TProduct).GetProperties();
-            foreach (var targetProp in targetProperties)
-            {
-                // 检查 T2 是否有同名属性
-                if (sourceProperties.TryGetValue(targetProp.Name, out var sourceProp))
-                {
-                    // 确保源属性可读，目标属性可写，且类型兼容
-                    if (sourceProp.CanRead && targetProp.CanWrite && sourceProp.PropertyType == targetProp.PropertyType)
-                    {
-                        // 获取源属性的值
-                        var value = sourceProp.GetValue(summaryRecord);
-                        // 赋值给目标属性
-                        targetProp.SetValue(product, value);
-                    }
-                }
-            }
-            //product.Ppi = summaryRecord.Ppi;
-            //product.ER = summaryRecord.ER;
-            //product.IL_by_PD = summaryRecord.IL_by_PD;
-            //product.Heater_Resistance = summaryRecord.Heater_Resistance;
-            //product.MPD_b_1V = summaryRecord.MPD_b_1V;
-            //product.MPD_t_1V = summaryRecord.MPD_t_1V;
-            //product.MPD_Ld_1V = summaryRecord.MPD_Ld_1V;
         }
 
         private void ToggleControls(bool enabled)
@@ -156,6 +112,5 @@ namespace ShipmentData
             this.txtShipmentDataPath.Clear();
             this.txtSummaryPath.Clear();
         }
-
     }
 }

@@ -44,7 +44,7 @@ namespace ShipmentData.Utils
             return columnIndexMap;
         }
 
-        internal static List<T> ReadShipmentDataFile<T>(string filePath) where T : IProduct, new()
+        internal static List<T> ReadShipmentDataFile<T>(string filePath) where T : IProductModel, new()
         {
             var result = new List<T>();
 
@@ -118,7 +118,7 @@ namespace ShipmentData.Utils
             return null;
         }
 
-        internal static void WriteBackToShipmentDataFile<T>(string filePath, List<T> dataList) where T : IProduct
+        internal static void WriteBackToShipmentDataFile<T>(string filePath, List<T> dataList) where T : IProductModel
         {
             using (var package = new ExcelPackage(new FileInfo(filePath)))
             {
@@ -228,6 +228,35 @@ namespace ShipmentData.Utils
 
             }
             return result;
+        }
+
+
+        internal static void GetSummaryData<TProduct, TSummary>(TProduct product, List<TSummary> list)
+                where TProduct : IProductModel
+                where TSummary : ISummaryModel
+        {
+            var summaryRecord = list.Where(summary => summary.SN == product.SN && $"CH{summary.Channel.Replace("CH", "")}" == product.Channel).FirstOrDefault();
+            if (summaryRecord == null)
+            {
+                throw new Exception($"未找到SN：{product.SN}, Channel:{product.Channel}的Summary数据!");
+            }
+            var sourceProperties = typeof(TSummary).GetProperties().ToDictionary(prop => prop.Name, prop => prop);
+            var targetProperties = typeof(TProduct).GetProperties();
+            foreach (var targetProp in targetProperties)
+            {
+                // 检查 T2 是否有同名属性
+                if (sourceProperties.TryGetValue(targetProp.Name, out var sourceProp))
+                {
+                    // 确保源属性可读，目标属性可写，且类型兼容
+                    if (sourceProp.CanRead && targetProp.CanWrite && sourceProp.PropertyType == targetProp.PropertyType)
+                    {
+                        // 获取源属性的值
+                        var value = sourceProp.GetValue(summaryRecord);
+                        // 赋值给目标属性
+                        targetProp.SetValue(product, value);
+                    }
+                }
+            }
         }
     }
 

@@ -11,8 +11,6 @@ namespace ShipmentData.Models
         [DisplayName("SN")]
         public string SN { get; set; }
 
-
-
         [DisplayName("Temp.")]
         public string Temp { get; set; }
 
@@ -38,7 +36,7 @@ namespace ShipmentData.Models
         public decimal? ER { get; set; }
     }
 
-    public class DenaliModel : BaseProductModel, IProduct
+    public class DenaliModel : BaseProductModel, IProductModel
     {
         [DisplayName("IL by PD")]
         public decimal? IL_by_PD { get; set; }
@@ -53,7 +51,7 @@ namespace ShipmentData.Models
         public string Channel { get; set; } // 手动设置 CH1-CH4  
     }
 
-    public class WeserModel : BaseProductModel, IProduct
+    public class WeserModel : BaseProductModel, IProductModel
     {
         [DisplayName("IL by Power")]
         public decimal? IL_by_PD { get; set; }
