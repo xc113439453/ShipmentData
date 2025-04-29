@@ -59,4 +59,19 @@ namespace ShipmentData.Models
         [DisplayName("Unit\nCH")]
         public string Channel { get; set; } // 手动设置 CH1-CH4 
     }
+
+    public class DenaliV3Model : BaseProductModel, IProductModel
+    {
+        [DisplayName("Unit\nCH")]
+        public string Channel { get; set; } // 手动设置 CH1-CH4 
+
+        [DisplayName("IL by PD")]
+        public decimal? IL_by_PD { get; set; }
+
+        [DisplayName("Loop 1")]
+        public decimal? Loop1 { get; set; }
+
+        [DisplayName("Loop 2")]
+        public decimal? Loop2 { get; set; }
+    }
 }

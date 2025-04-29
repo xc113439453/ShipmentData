@@ -6,10 +6,18 @@
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<FileVersion>1.1.0</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="CsvHelper" Version="33.0.1" />
 		<PackageReference Include="EPPlus" Version="8.0.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="UpdateLog.txt">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

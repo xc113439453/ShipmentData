@@ -36,6 +36,7 @@
             txtSummaryPath = new TextBox();
             txtShipmentDataPath = new TextBox();
             btnProcess = new Button();
+            rbDenaliV3 = new RadioButton();
             gbProduct.SuspendLayout();
             SuspendLayout();
             // 
@@ -59,6 +60,7 @@
             // 
             // gbProduct
             // 
+            gbProduct.Controls.Add(rbDenaliV3);
             gbProduct.Controls.Add(rbDenali);
             gbProduct.Controls.Add(rbWeser);
             gbProduct.Location = new Point(39, 28);
@@ -73,7 +75,7 @@
             rbDenali.AutoSize = true;
             rbDenali.Location = new Point(151, 29);
             rbDenali.Name = "rbDenali";
-            rbDenali.Size = new Size(75, 24);
+            rbDenali.Size = new Size(72, 24);
             rbDenali.TabIndex = 1;
             rbDenali.TabStop = true;
             rbDenali.Text = "Denali";
@@ -84,7 +86,7 @@
             rbWeser.AutoSize = true;
             rbWeser.Location = new Point(19, 29);
             rbWeser.Name = "rbWeser";
-            rbWeser.Size = new Size(76, 24);
+            rbWeser.Size = new Size(73, 24);
             rbWeser.TabIndex = 0;
             rbWeser.TabStop = true;
             rbWeser.Text = "Weser";
@@ -118,6 +120,17 @@
             btnProcess.UseVisualStyleBackColor = true;
             btnProcess.Click += btnProcess_Click;
             // 
+            // rbDenaliV3
+            // 
+            rbDenaliV3.AutoSize = true;
+            rbDenaliV3.Location = new Point(282, 29);
+            rbDenaliV3.Name = "rbDenaliV3";
+            rbDenaliV3.Size = new Size(91, 24);
+            rbDenaliV3.TabIndex = 2;
+            rbDenaliV3.TabStop = true;
+            rbDenaliV3.Text = "DenaliV3";
+            rbDenaliV3.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
@@ -147,5 +160,6 @@
         private TextBox txtSummaryPath;
         private TextBox txtShipmentDataPath;
         private Button btnProcess;
+        private RadioButton rbDenaliV3;
     }
 }

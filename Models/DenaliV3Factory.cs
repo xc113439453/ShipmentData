@@ -3,14 +3,14 @@ using ShipmentData.Utils;
 
 namespace ShipmentData.Models
 {
-    internal class DenaliFactory : IProductFactory
+    internal class DenaliV3Factory : IProductFactory
     {
         public List<IProductModel> ProcessSummaryData(List<IProductModel> dataList, List<ISummaryModel> summaryList)
         {
-            var productList = dataList.Cast<DenaliModel>().ToList();
+            var productList = dataList.Cast<DenaliV3Model>().ToList();
             productList.AsParallel().ForAll(data =>
             {
-                ExcelUtil.GetSummaryData(data, summaryList.Cast<DenaliSummaryModel>().ToList());
+                ExcelUtil.GetSummaryData(data, summaryList.Cast<DenaliV3SummaryModel>().ToList());
             });
 
             return productList.Cast<IProductModel>().ToList();
@@ -18,21 +18,21 @@ namespace ShipmentData.Models
 
         public List<IProductModel> ReadShipmentDataFile(string filePath)
         {
-            return ExcelUtil.ReadShipmentDataFile<DenaliModel>(filePath)
+            return ExcelUtil.ReadShipmentDataFile<DenaliV3Model>(filePath)
                  .Cast<IProductModel>()
                  .ToList();
         }
 
         public List<ISummaryModel> ReadSummaryFile(string filePath)
         {
-            return ExcelUtil.ReadSummaryFile<DenaliSummaryModel>(filePath)
+            return CSVUtil.ReadSummaryFile<DenaliV3SummaryModel>(filePath)
                 .Cast<ISummaryModel>()
                 .ToList();
         }
 
         public void WriteBackToShipmentDataFile(string filePath, List<IProductModel> dataList)
         {
-            ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList.Cast<DenaliModel>().ToList());
+            ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList.Cast<DenaliV3Model>().ToList());
         }
     }
 }

@@ -10,13 +10,16 @@ namespace ShipmentData
         public MainForm()
         {
             InitializeComponent();
+            var fileVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
+            this.Text = $"{this.Text} V{fileVersion}";
         }
 
         private void txtFilePath_Click(object sender, EventArgs e)
         {
+            var product = GetSelectedRadioButtonValue(gbProduct).ToUpper();
             using var openFileDialog = new OpenFileDialog
             {
-                Filter = "xlsx (.xlsx)|*.xlsx"
+                Filter = product == "DENALIV3" && (sender as TextBox).Name == "txtSummaryPath" ? "CSV (.csv)|*.csv" : "xlsx (.xlsx)|*.xlsx"
             };
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
@@ -39,6 +42,7 @@ namespace ShipmentData
                 {
                     "WESER" => new WeserFactory(),
                     "DENALI" => new DenaliFactory(),
+                    "DENALIV3" => new DenaliV3Factory(),
                     _ => throw new InvalidOperationException("未找到对应的产品类型！.")
                 };
 
@@ -48,7 +52,7 @@ namespace ShipmentData
                 factory.WriteBackToShipmentDataFile(filePath, productList);
 
                 MessageBox.Show("处理完成，即将打开文件");
-                ClearText();
+                //ClearText();
                 OpenFile(filePath);
             }
             catch (Exception ex)

@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using ShipmentData.Interfaces;
+﻿using ShipmentData.Interfaces;
 using ShipmentData.Utils;
 
 namespace ShipmentData.Models
@@ -9,7 +8,7 @@ namespace ShipmentData.Models
         public List<IProductModel> ProcessSummaryData(List<IProductModel> dataList, List<ISummaryModel> summaryList)
         {
             var productList = dataList.Cast<WeserModel>().ToList();
-            productList.ForEach(data =>
+            productList.AsParallel().ForAll(data =>
             {
                 ExcelUtil.GetSummaryData(data, summaryList.Cast<WeserSummaryModel>().ToList());
             });
