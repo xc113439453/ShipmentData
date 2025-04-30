@@ -25,9 +25,12 @@ namespace ShipmentData.Models
 
         public List<ISummaryModel> ReadSummaryFile(string filePath)
         {
-            return CSVUtil.ReadSummaryFile<DenaliV3SummaryModel>(filePath)
-                .Cast<ISummaryModel>()
-                .ToList();
+            List<DenaliV3SummaryModel> list = CSVUtil.ReadSummaryFile<DenaliV3SummaryModel>(filePath);
+            list.AsParallel().ForAll(data =>
+            {
+                data.Channel = $"CH{data.Channel}";
+            });
+            return list.Cast<ISummaryModel>().ToList();
         }
 
         public void WriteBackToShipmentDataFile(string filePath, List<IProductModel> dataList)
