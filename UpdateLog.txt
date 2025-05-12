@@ -3,3 +3,5 @@ V 1.1.0
 	增加产品类型DenaliV3 及对应逻辑处理;
 	产品类型Weser修正：将Summary中"Loss_by_power_PIC"列带入出货数据表"IL by Power"列 
 V 1.1.1 DenaliV3 Summary通道为数字，特殊处理成出货数据通道格式：CH1
+V 1.1.2 DenaliV3 出货数据表格式调整(IL by PD → IL by Power)
+V 1.1.3 修正DenaliV3 存在通道值不是从1开始的情况（CH5~CH8）

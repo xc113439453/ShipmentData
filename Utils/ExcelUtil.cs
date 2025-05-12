@@ -62,7 +62,22 @@ public class ExcelUtil
             int headerRow = 9;
             int startRow = 12;
 
-            string[] channels = { "CH1", "CH2", "CH3", "CH4" };
+            // 使用 HashSet 存储通道值去重值
+            HashSet<string> uniqueChannels = new HashSet<string>();
+
+            
+            for (int row = startRow; row <= worksheet.Dimension.Rows; row++)
+            {
+                var cellValue = worksheet.Cells[row, 4].Value?.ToString();
+                if (!string.IsNullOrEmpty(cellValue))
+                {
+                    uniqueChannels.Add(cellValue.ToString().ToUpper());
+                }
+            }
+
+
+            //string[] channels = { "CH1", "CH2", "CH3", "CH4" };
+            string[] channels = uniqueChannels.ToArray();
 
             // 获取属性映射和列索引
             var propertyMappings = GetPropertyMappings<T>();

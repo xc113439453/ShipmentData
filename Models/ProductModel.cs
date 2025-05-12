@@ -65,7 +65,7 @@ namespace ShipmentData.Models
         [DisplayName("Unit\nCH")]
         public string Channel { get; set; } // 手动设置 CH1-CH4 
 
-        [DisplayName("IL by PD")]
+        [DisplayName("IL by Power")]
         public decimal? IL_by_PD { get; set; }
 
         [DisplayName("Loop 1")]
