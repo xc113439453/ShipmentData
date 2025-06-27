@@ -61,11 +61,12 @@ public class ExcelUtil
             // 表头在第 9 行，数据从第 12 行开始
             int headerRow = 9;
             int startRow = 12;
+            int headerStartColumn = 2;
 
             // 使用 HashSet 存储通道值去重值
             HashSet<string> uniqueChannels = new HashSet<string>();
 
-            
+
             for (int row = startRow; row <= worksheet.Dimension.Rows; row++)
             {
                 var cellValue = worksheet.Cells[row, 4].Value?.ToString();
@@ -81,6 +82,11 @@ public class ExcelUtil
 
             // 获取属性映射和列索引
             var propertyMappings = GetPropertyMappings<T>();
+
+            // add 20250627
+            // 可能存在出货模板减少列的情况
+            propertyMappings = FilterByShipmentTemplate(worksheet, headerRow, headerStartColumn, propertyMappings);
+
             var columnIndexMap = GetColumnIndexMap(worksheet, headerRow, propertyMappings);
 
             // 遍历数据行
@@ -126,6 +132,15 @@ public class ExcelUtil
 
         return result;
     }
+
+    private static List<(PropertyInfo Property, string ColumnName)> FilterByShipmentTemplate(ExcelWorksheet worksheet, int headerRow, int headerStartColumn, List<(PropertyInfo Property, string ColumnName)> propertyMappings)
+    {
+        List<string> shipmentHeadColumns = GetRangeValuesAsList(worksheet, worksheet.Cells[headerRow, headerStartColumn, headerRow, worksheet.Dimension.End.Column].Address);
+        return propertyMappings = propertyMappings
+            .Where(mapping => shipmentHeadColumns.Contains(mapping.ColumnName))
+            .ToList();
+    }
+
     private static decimal? ParseDecimal(string text)
     {
         if (decimal.TryParse(text, out decimal value))
@@ -142,9 +157,15 @@ public class ExcelUtil
             // 表头和数据行设置
             int headerRow = 9;
             int startRow = 12;
+            int headerStartColumn = 2;
 
             // 获取属性映射和列索引
             var propertyMappings = GetPropertyMappings<T>();
+
+            // add 20250627
+            // 可能存在出货模板减少列的情况
+            propertyMappings = FilterByShipmentTemplate(worksheet, headerRow, headerStartColumn, propertyMappings);
+
             var columnIndexMap = GetColumnIndexMap(worksheet, headerRow, propertyMappings);
 
             // 清空数据区域（从第 12 行开始）
@@ -273,4 +294,23 @@ public class ExcelUtil
             }
         }
     }
+
+    public static List<string> GetRangeValuesAsList(ExcelWorksheet worksheet, string address)
+    {
+        var range = worksheet.Cells[address];
+        var rangeValues = range.Value as object[,];
+        var valueList = new List<string>();
+        if (rangeValues != null)
+        {
+            // 遍历范围值（单行，第二维是列）
+            valueList = rangeValues
+                .Cast<object>() // 展平二维数组
+                .Where(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()))
+                .Select(v => Convert.ToString(v).Trim())
+                .ToList();
+        }
+
+        return valueList;
+    }
 }
+
