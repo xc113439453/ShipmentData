@@ -12,12 +12,12 @@ namespace ShipmentData.Models
         public string SN { get; set; }
 
         [DisplayName("Temp.")]
-        public string Temp { get; set; }
+        public string Temp { get; set; } = "RT";
 
         [DisplayName("Test Result")]
-        public string Result { get; set; }
+        public string Result { get; set; } = "Pass";
 
-        [DisplayName("Heater_ Resistance")]
+        [DisplayName("Heater_Resistance")]
         public decimal? Heater_Resistance { get; set; }
 
         [DisplayName("MPD_b (1V)")]
@@ -26,7 +26,7 @@ namespace ShipmentData.Models
         [DisplayName("MPD_t (1V)")]
         public decimal? MPD_t_1V { get; set; }
 
-        [DisplayName("MPD_ Ld (1V)")]
+        [DisplayName("MPD_LD (1V)")]
         public decimal? MPD_Ld_1V { get; set; }
 
         [DisplayName("Ppi")]
@@ -36,42 +36,35 @@ namespace ShipmentData.Models
         public decimal? ER { get; set; }
     }
 
-    public class DenaliModel : BaseProductModel, IProductModel
+
+
+    public class DenaliV3PICModel : BaseProductModel, IProductModel
     {
+        public DenaliV3PICModel()
+        {
+
+        }
+        [DisplayName("Unit\nCH")]
+        public string Channel { get; set; } // 手动设置 CH1-CH4 
+
         [DisplayName("IL by PD")]
         public decimal? IL_by_PD { get; set; }
 
-        [DisplayName("Loop1")]
-        public decimal? Loop1 { get; set; }
-
-        [DisplayName("Loop2")]
-        public decimal? Loop2 { get; set; }
-
-        [DisplayName("Unit\n  \nCH")]
-        public string Channel { get; set; } // 手动设置 CH1-CH4  
+        [DisplayName("Loop")]
+        public decimal? Loop { get; set; }
     }
 
-    public class WeserModel : BaseProductModel, IProductModel
+    public class DenaliV3WaferModel : BaseProductModel, IProductModel
     {
-        [DisplayName("IL by Power")]
-        public decimal? IL_by_PD { get; set; }
+        public DenaliV3WaferModel()
+        {
 
-        [DisplayName("Unit\nCH")]
-        public string Channel { get; set; } // 手动设置 CH1-CH4 
-    }
-
-    public class DenaliV3Model : BaseProductModel, IProductModel
-    {
+        }
         [DisplayName("Unit\nCH")]
         public string Channel { get; set; } // 手动设置 CH1-CH4 
 
         [DisplayName("IL by Power")]
-        public decimal? IL_by_PD { get; set; }
+        public decimal? IL_by_Power { get; set; }
 
-        [DisplayName("Loop 1")]
-        public decimal? Loop1 { get; set; }
-
-        [DisplayName("Loop 2")]
-        public decimal? Loop2 { get; set; }
     }
 }

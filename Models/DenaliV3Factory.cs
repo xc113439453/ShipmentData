@@ -3,39 +3,53 @@ using ShipmentData.Utils;
 
 namespace ShipmentData.Models
 {
-    internal class DenaliV3Factory : IProductFactory
+    public abstract class DenaliV3Factory<TSummary, TProduct> : IProductFactory
+        where TSummary : ISummaryModel, new()
+        where TProduct : BaseProductModel, IProductModel, new()
     {
-        public List<IProductModel> ProcessSummaryData(List<IProductModel> dataList, List<ISummaryModel> summaryList)
+        public List<IProductModel> ProcessSummaryData(List<IProductModel> dataList, List<string> snList, List<ISummaryModel> summaryList)
         {
-            var productList = dataList.Cast<DenaliV3Model>().ToList();
-            productList.AsParallel().ForAll(data =>
+            int i = 1;
+            foreach (var sn in snList)
             {
-                ExcelUtil.GetSummaryData(data, summaryList.Cast<DenaliV3SummaryModel>().ToList());
-            });
+                foreach (var channel in summaryList.Where(t => t.SN == sn).Select(t => t.Channel))
+                {
+                    dataList.Add(new TProduct { No = i, SN = sn, Channel = channel });
+                }
+                i++;
+            }
+            var productList = dataList.Cast<TProduct>().ToList();
+            //productList.AsParallel().ForAll(data =>
+            //{
+            //    ExcelUtil.GetSummaryData(data, summaryList.Cast<TSummary>().ToList());
+            //});
+            foreach (var data in productList)
+            {
+                ExcelUtil.GetSummaryData(data, summaryList.Cast<TSummary>().ToList());
+            }
 
             return productList.Cast<IProductModel>().ToList();
         }
 
         public List<IProductModel> ReadShipmentDataFile(string filePath)
         {
-            return ExcelUtil.ReadShipmentDataFile<DenaliV3Model>(filePath)
-                 .Cast<IProductModel>()
-                 .ToList();
+            //return ExcelUtil.ReadShipmentDataFile<T2>(filePath)
+            //     .Cast<IProductModel>()
+            //     .ToList();
+            return new List<TProduct>().Cast<IProductModel>().ToList();
         }
 
-        public List<ISummaryModel> ReadSummaryFile(string filePath)
+        public List<string> ReadSNListFile(string filePath)
         {
-            List<DenaliV3SummaryModel> list = CSVUtil.ReadSummaryFile<DenaliV3SummaryModel>(filePath);
-            list.AsParallel().ForAll(data =>
-            {
-                data.Channel = $"CH{data.Channel}";
-            });
-            return list.Cast<ISummaryModel>().ToList();
+            return ExcelUtil.ReadSNListFile(filePath);
         }
+
+        public abstract List<ISummaryModel> ReadSummaryFile(List<SummaryFileInfoItem> files);
+
 
         public void WriteBackToShipmentDataFile(string filePath, List<IProductModel> dataList)
         {
-            ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList.Cast<DenaliV3Model>().ToList());
+            ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList.Cast<TProduct>().ToList());
         }
     }
 }

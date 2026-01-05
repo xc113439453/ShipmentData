@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
+using ShipmentData.Interfaces;
 
 namespace ShipmentData.Utils;
 
 public class CSVUtil
 {
-    public static List<T> ReadSummaryFile<T>(string filePath) where T : new()
+    public static List<T> ReadSummaryFile<T>(string filePath) where T : ISummaryModel
     {
 
 

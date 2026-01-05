@@ -1,8 +1,11 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
+using System.Windows.Forms.Design;
 using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using ShipmentData.Interfaces;
 using ShipmentData.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ShipmentData.Utils;
 
@@ -186,7 +189,7 @@ public class ExcelUtil
             {
                 string sn = group.Key;
                 var channels = group.OrderBy(d => d.Channel); // 假设按 CH1, CH2, CH3, CH4 排序
-
+                int no = channels.Select(t => t.No).FirstOrDefault();
                 foreach (var data in channels)
                 {
                     foreach (var mapping in propertyMappings)
@@ -197,20 +200,38 @@ public class ExcelUtil
 
                         // 写入单元格
                         worksheet.Cells[currentRow, colIndex].Value = value;
+                        worksheet.Cells[currentRow, colIndex].Style.Border.BorderAround(ExcelBorderStyle.Thin);
                     }
                     currentRow++;
                 }
 
                 // 设置 SN 合并单元格
-                int snColIndex = columnIndexMap[nameof(WeserModel.SN)];
+                int snColIndex = columnIndexMap["SN"];
+                int noColIndex = columnIndexMap["No"];
                 worksheet.Cells[currentRow - channels.Count(), snColIndex, currentRow - 1, snColIndex].Merge = true;
                 worksheet.Cells[currentRow - channels.Count(), snColIndex].Value = sn;
 
-
+                worksheet.Cells[currentRow - channels.Count(), noColIndex, currentRow - 1, noColIndex].Merge = true;
+                worksheet.Cells[currentRow - channels.Count(), noColIndex].Value = no;
             }
 
-            // 保存文件
-            package.Save();
+            worksheet.Cells["H05"].Value = $"{groupedData.Count()}pcs";
+
+            // ==================== 保存对话框 ====================
+            using var sfd = new SaveFileDialog
+            {
+                Filter = "Excel 文件|*.xlsx",
+                FileName = $"出货报告.xlsx",
+                Title = "保存结果"
+            };
+
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                package.SaveAs(new FileInfo(sfd.FileName));
+
+                // 自动打开文件所在目录并选中
+                System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + sfd.FileName + "\"");
+            }
         }
     }
 
@@ -266,18 +287,39 @@ public class ExcelUtil
         return result;
     }
 
+    internal static List<string> ReadSNListFile(string filePath)
+    {
+        var snList = new List<string>();
+        using (var package = new ExcelPackage(new FileInfo(filePath)))
+        {
+            var worksheet = package.Workbook.Worksheets["报检SN"];
+            // 假设 SN 列在第 1 列，数据从第 1 行开始
+            int startRow = 1;
+            for (int row = startRow; row <= worksheet.Dimension.End.Row; row++)
+            {
+                string sn = worksheet.Cells[row, 1].Text;
+                if (!string.IsNullOrEmpty(sn))
+                {
+                    snList.Add(sn.Trim());
+                }
+            }
+        }
+        return snList;
+    }
 
     internal static void GetSummaryData<TProduct, TSummary>(TProduct product, List<TSummary> list)
             where TProduct : IProductModel
             where TSummary : ISummaryModel
     {
-        var summaryRecord = list.Where(summary => summary.SN == product.SN && $"CH{summary.Channel.Replace("CH", "")}" == product.Channel).FirstOrDefault();
-        if (summaryRecord == null)
+        var snRecord = list.Where(summary => summary.SN == product.SN && $"{summary.Channel.Replace("CH", "")}" == product.Channel.Replace("CH", "")).FirstOrDefault();
+        if (snRecord == null)
         {
-            throw new Exception($"未找到SN：{product.SN}, Channel：{product.Channel}的Summary数据!");
+            throw new Exception($"未找到SN：{product.SN}, Channel:{product.Channel}的Summary数据!");
         }
+        snRecord.Channel = $"CH{snRecord.Channel.Replace("CH", "")}";
         var sourceProperties = typeof(TSummary).GetProperties().ToDictionary(prop => prop.Name, prop => prop);
         var targetProperties = typeof(TProduct).GetProperties();
+
         foreach (var targetProp in targetProperties)
         {
             // 检查 T2 是否有同名属性
@@ -287,12 +329,14 @@ public class ExcelUtil
                 if (sourceProp.CanRead && targetProp.CanWrite && sourceProp.PropertyType == targetProp.PropertyType)
                 {
                     // 获取源属性的值
-                    var value = sourceProp.GetValue(summaryRecord);
+                    var value = sourceProp.GetValue(snRecord);
                     // 赋值给目标属性
                     targetProp.SetValue(product, value);
                 }
             }
         }
+
+
     }
 
     public static List<string> GetRangeValuesAsList(ExcelWorksheet worksheet, string address)
