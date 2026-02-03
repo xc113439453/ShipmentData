@@ -44,6 +44,8 @@
             gbStation = new GroupBox();
             rbPIC = new RadioButton();
             rbWafer = new RadioButton();
+            btnAddFilter = new Button();
+            lblFilterStatus = new Label();
             gbProduct.SuspendLayout();
             gbStation.SuspendLayout();
             SuspendLayout();
@@ -201,11 +203,31 @@
             rbWafer.UseVisualStyleBackColor = true;
             rbWafer.CheckedChanged += Station_CheckedChanged;
             // 
+            // btnAddFilter
+            // 
+            btnAddFilter.Location = new Point(39, 529);
+            btnAddFilter.Name = "btnAddFilter";
+            btnAddFilter.Size = new Size(118, 29);
+            btnAddFilter.TabIndex = 11;
+            btnAddFilter.Text = "添加过滤条件";
+            btnAddFilter.UseVisualStyleBackColor = true;
+            btnAddFilter.Click += btnAddFilter_Click;
+            // 
+            // lblFilterStatus
+            // 
+            lblFilterStatus.AutoSize = true;
+            lblFilterStatus.Location = new Point(181, 533);
+            lblFilterStatus.Name = "lblFilterStatus";
+            lblFilterStatus.Size = new Size(0, 20);
+            lblFilterStatus.TabIndex = 12;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(710, 594);
+            Controls.Add(lblFilterStatus);
+            Controls.Add(btnAddFilter);
             Controls.Add(gbStation);
             Controls.Add(btnDel);
             Controls.Add(btnAdd);
@@ -245,5 +267,7 @@
         private GroupBox gbStation;
         private RadioButton rbWafer;
         private RadioButton rbPIC;
+        private Button btnAddFilter;
+        private Label lblFilterStatus;
     }
 }

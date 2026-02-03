@@ -1,17 +1,22 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using ShipmentData.Attributes;
 using ShipmentData.Interfaces;
 
 namespace ShipmentData.Models
 {
     public class BaseProductModel
     {
+        [ExcludeFromFilter]
         [DisplayName("No.")]
         public int No { get; set; }
 
         [DisplayName("SN")]
+        [ExcludeFromFilter]
         public string SN { get; set; }
 
         [DisplayName("Temp.")]
+        [ExcludeFromFilter]
         public string Temp { get; set; } = "RT";
 
         [DisplayName("Test Result")]
@@ -45,6 +50,7 @@ namespace ShipmentData.Models
 
         }
         [DisplayName("Unit\nCH")]
+        [ExcludeFromFilter]
         public string Channel { get; set; } // 手动设置 CH1-CH4 
 
         [DisplayName("IL by PD")]
@@ -61,6 +67,7 @@ namespace ShipmentData.Models
 
         }
         [DisplayName("Unit\nCH")]
+        [ExcludeFromFilter]
         public string Channel { get; set; } // 手动设置 CH1-CH4 
 
         [DisplayName("IL by Power")]

@@ -7,7 +7,12 @@
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<FileVersion>2.0.0</FileVersion>
+		<LangVersion>12.0</LangVersion>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="pwbjdwi5.ieb~" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="CsvHelper" Version="33.0.1" />
