@@ -217,6 +217,11 @@ public class ExcelUtil
 
             worksheet.Cells["H05"].Value = $"{groupedData.Count()}pcs";
 
+            // 或者保留打印区域，但强制让它包含所有数据（不推荐，容易出错）
+            var lastRow = worksheet.Dimension?.End.Row ?? 1000;
+            var lastCol = worksheet.Dimension?.End.Column ?? 26;
+            worksheet.PrinterSettings.PrintArea = worksheet.Cells[1, 1, lastRow + 50, lastCol];  // 预留一些空行
+
             // ==================== 保存对话框 ====================
             using var sfd = new SaveFileDialog
             {
@@ -224,6 +229,7 @@ public class ExcelUtil
                 FileName = $"出货报告.xlsx",
                 Title = "保存结果"
             };
+           
 
             if (sfd.ShowDialog() == DialogResult.OK)
             {

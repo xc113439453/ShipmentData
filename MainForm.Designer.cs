@@ -62,9 +62,9 @@
             label2.AutoSize = true;
             label2.Location = new Point(39, 416);
             label2.Name = "label2";
-            label2.Size = new Size(129, 20);
+            label2.Size = new Size(114, 20);
             label2.TabIndex = 1;
-            label2.Text = "出货数据表文件：";
+            label2.Text = "出货数据模板：";
             // 
             // gbProduct
             // 
