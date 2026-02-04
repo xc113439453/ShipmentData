@@ -7,6 +7,7 @@ namespace ShipmentData.Models
         where TSummary : ISummaryModel, new()
         where TProduct : BaseProductModel, IProductModel, new()
     {
+        public abstract string AmountCellAddress { get; }
         public List<IProductModel> ProcessSummaryData(List<IProductModel> dataList, List<string> snList, List<ISummaryModel> summaryList)
         {
             int i = 1;
@@ -49,7 +50,7 @@ namespace ShipmentData.Models
 
         public void WriteBackToShipmentDataFile(string filePath, List<IProductModel> dataList)
         {
-            ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList.Cast<TProduct>().ToList());
+            ExcelUtil.WriteBackToShipmentDataFile(filePath, dataList.Cast<TProduct>().ToList(), AmountCellAddress);
         }
     }
 }

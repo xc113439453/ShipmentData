@@ -1,11 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
-using System.Windows.Forms.Design;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using ShipmentData.Interfaces;
-using ShipmentData.Models;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ShipmentData.Utils;
 
@@ -151,7 +148,7 @@ public class ExcelUtil
         return null;
     }
 
-    internal static void WriteBackToShipmentDataFile<T>(string filePath, List<T> dataList) where T : IProductModel
+    internal static void WriteBackToShipmentDataFile<T>(string filePath, List<T> dataList, string amountCell) where T : IProductModel
     {
         using (var package = new ExcelPackage(new FileInfo(filePath)))
         {
@@ -215,7 +212,7 @@ public class ExcelUtil
                 worksheet.Cells[currentRow - channels.Count(), noColIndex].Value = no;
             }
 
-            worksheet.Cells["H05"].Value = $"{groupedData.Count()}pcs";
+            worksheet.Cells[amountCell].Value = $"{groupedData.Count()}pcs";
 
             // 或者保留打印区域，但强制让它包含所有数据（不推荐，容易出错）
             var lastRow = worksheet.Dimension?.End.Row ?? 1000;

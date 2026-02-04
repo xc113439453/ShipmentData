@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -52,12 +53,57 @@ namespace ShipmentData
                 var snList = factory.ReadSNListFile(txtSNListFilePath.Text);
                 var dataList = factory.ReadShipmentDataFile(filePath);
                 var summaryList = factory.ReadSummaryFile(summaryFileList);
+                // 第一步：原有 SN list 过滤，得到原始 productList
                 var productList = factory.ProcessSummaryData(dataList, snList, summaryList);
-                if (_savedFilterRules != null && _savedFilterRules.Count > 0)
+                // 如果没有自定义过滤规则，直接跳过
+                if (_savedFilterRules == null || _savedFilterRules.Count == 0)
                 {
-                    productList = ApplyUserExtraFilters(productList, _savedFilterRules);
+                    // 直接写入
+                    factory.WriteBackToShipmentDataFile(filePath, productList);
+                    MessageBox.Show($"处理完成！共 {productList.DistinctBy(t => t.SN).Count()} Pcs记录。", "info");
+                    return;
                 }
-                factory.WriteBackToShipmentDataFile(filePath, productList);
+                // 第二步：找出所有“至少有一条记录不符合自定义条件”的 SN
+                var badSNs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var item in productList)
+                {
+                    // 假设 IProductModel 有 SN 属性（如果没有，用反射获取）
+                    string sn = item.SN;  // 如果没有 SN 属性，请改成反射：propValue = item.GetType().GetProperty("SN")?.GetValue(item)?.ToString()
+
+                    if (string.IsNullOrWhiteSpace(sn))
+                        continue;
+
+                    // 检查这条记录是否符合所有规则
+                    bool isValid = true;
+
+                    foreach (var rule in _savedFilterRules)
+                    {
+                        var prop = item.GetType().GetProperty(rule.Field);
+                        if (prop == null) continue;
+
+                        var propValue = prop.GetValue(item);
+
+                        if (!IsMatchRule(propValue, rule.Operator, rule.Value))
+                        {
+                            isValid = false;
+                            break;
+                        }
+                    }
+
+                    if (!isValid)
+                    {
+                        badSNs.Add(sn);
+                    }
+                }
+
+                // 第三步：过滤掉所有 bad SN 的记录
+                var finalList = productList
+                    .Where(item => !badSNs.Contains(item.SN))  // 假设有 SN 属性
+                    .ToList();
+                // 第四步：写入文件
+                factory.WriteBackToShipmentDataFile(filePath, finalList);
+
+                MessageBox.Show($"处理完成！\n原始记录：{productList.DistinctBy(t => t.SN).Count()} Pcs      过滤后：{finalList.DistinctBy(t => t.SN).Count()} Pcs", "info");
             }
             catch (Exception ex)
             {
@@ -69,131 +115,160 @@ namespace ShipmentData
             }
         }
 
-        private List<T> ApplyUserExtraFilters<T>(List<T> source, List<FilterRule> rules) where T : IProductModel
-        {
-            if (source == null || source.Count == 0 || rules == null || rules.Count == 0)
-                return source ?? new List<T>();
-
-            var query = source.AsQueryable();
-
-            foreach (var rule in rules)
-            {
-                query = ApplySingleFilterRule(query, rule);
-            }
-
-            return query.ToList();
-        }
-
         /// <summary>
-        /// 对查询应用单条用户自定义过滤规则
+        /// 判断单个属性值是否符合过滤规则（完全避免任何可空类型模式匹配）
         /// </summary>
-        /// <typeparam name="T">必须实现 IProductModel 接口的类型</typeparam>
-        /// <param name="query">待过滤的 IQueryable 数据源</param>
-        /// <param name="rule">单条过滤规则</param>
-        /// <returns>应用过滤后的 IQueryable</returns>
-        private IQueryable<T> ApplySingleFilterRule<T>(IQueryable<T> query, FilterRule rule)
-            where T : IProductModel
+        /// <param name="propValue">反射得到的属性值（可能为 null）</param>
+        /// <param name="op">操作符</param>
+        /// <param name="ruleValue">规则值（字符串）</param>
+        /// <returns>是否匹配</returns>
+        private bool IsMatchRule(object propValue, string op, string ruleValue)
         {
-            if (query == null || rule == null)
+            if (propValue == null)
             {
-                return query;
+                return op == "!=";  // null != 值 → true，其余 false（可改成 true）
             }
 
-            switch (rule.Field)
+            string ruleVal = ruleValue?.Trim() ?? "";
+
+            // 字符串
+            if (propValue is string strVal)
             {
-
-                case nameof(BaseProductModel.Heater_Resistance):
-                    return ApplyNullableDecimalFilter(query, x => x.Heater_Resistance, rule.Operator, rule.Value);
-
-                case nameof(BaseProductModel.MPD_b_1V):
-                    return ApplyNullableDecimalFilter(query, x => x.MPD_b_1V, rule.Operator, rule.Value);
-
-                case nameof(BaseProductModel.MPD_t_1V):
-                    return ApplyNullableDecimalFilter(query, x => x.MPD_t_1V, rule.Operator, rule.Value);
-
-                case nameof(BaseProductModel.MPD_Ld_1V):
-                    return ApplyNullableDecimalFilter(query, x => x.MPD_Ld_1V, rule.Operator, rule.Value);
-
-                case nameof(BaseProductModel.Ppi):
-                    return ApplyNullableDecimalFilter(query, x => x.Ppi, rule.Operator, rule.Value);
-
-                case nameof(BaseProductModel.ER):
-                    return ApplyNullableDecimalFilter(query, x => x.ER, rule.Operator, rule.Value);
-
-
-                // DenaliV3PICModel 专有字段
-                case nameof(DenaliV3PICModel.IL_by_PD):
-                    return query.OfType<DenaliV3PICModel>().Where(pic => ApplyDecimalCondition(pic.IL_by_PD, rule.Operator, rule.Value)).Cast<T>();
-
-                case nameof(DenaliV3PICModel.Loop):
-                    return query.OfType<DenaliV3PICModel>().Where(pic => ApplyDecimalCondition(pic.Loop, rule.Operator, rule.Value)).Cast<T>();
-
-                // DenaliV3WaferModel 专有字段
-                case nameof(DenaliV3WaferModel.IL_by_Power):
-                    return query.OfType<DenaliV3WaferModel>().Where(pic => ApplyDecimalCondition(pic.IL_by_Power, rule.Operator, rule.Value)).Cast<T>();
-
-                default:
-                    // 未知字段 → 不做过滤，直接返回原查询
-                    return query;
+                return op switch
+                {
+                    "==" => strVal == ruleVal,
+                    "!=" => strVal != ruleVal,
+                    "Contains" => strVal.Contains(ruleVal, StringComparison.OrdinalIgnoreCase),
+                    "StartsWith" => strVal.StartsWith(ruleVal, StringComparison.OrdinalIgnoreCase),
+                    "EndsWith" => strVal.EndsWith(ruleVal, StringComparison.OrdinalIgnoreCase),
+                    _ => true
+                };
             }
-        }
 
-        // 字符串条件判断
-        private bool ApplyStringCondition(string source, string op, string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return true;
-            value = value.Trim();
-
-            return op switch
+            // decimal 处理
+            decimal? decNullable = propValue as decimal?;
+            if (decNullable.HasValue)
             {
-                "==" => source == value,
-                "!=" => source != value,
-                "Contains" => source?.Contains(value) ?? false,
-                "StartsWith" => source?.StartsWith(value) ?? false,
-                "EndsWith" => source?.EndsWith(value) ?? false,
-                _ => true
-            };
-        }
-
-        // 可空 decimal 过滤（用于公共 decimal? 字段）
-        private IQueryable<T> ApplyNullableDecimalFilter<T>(
-            IQueryable<T> query,
-            Expression<Func<T, decimal?>> selector,
-            string op,
-            string valueStr)
-            where T : IProductModel
-        {
-            if (!decimal.TryParse(valueStr, out var value)) return query;
-
-            return op switch
+                if (!decimal.TryParse(ruleVal, out var ruleDec)) return false;
+                var actualDec = decNullable.Value;
+                return op switch
+                {
+                    "==" => actualDec == ruleDec,
+                    "!=" => actualDec != ruleDec,
+                    ">" => actualDec > ruleDec,
+                    ">=" => actualDec >= ruleDec,
+                    "<" => actualDec < ruleDec,
+                    "<=" => actualDec <= ruleDec,
+                    _ => true
+                };
+            }
+            else if (propValue is decimal decVal)
             {
-                "==" => query.Where(x => selector.Compile()(x) == value),
-                "!=" => query.Where(x => selector.Compile()(x) != value),
-                ">" => query.Where(x => selector.Compile()(x) > value),
-                ">=" => query.Where(x => selector.Compile()(x) >= value),
-                "<" => query.Where(x => selector.Compile()(x) < value),
-                "<=" => query.Where(x => selector.Compile()(x) <= value),
-                _ => query
-            };
-        }
+                if (!decimal.TryParse(ruleVal, out var ruleDec)) return false;
+                return op switch
+                {
+                    "==" => decVal == ruleDec,
+                    "!=" => decVal != ruleDec,
+                    ">" => decVal > ruleDec,
+                    ">=" => decVal >= ruleDec,
+                    "<" => decVal < ruleDec,
+                    "<=" => decVal <= ruleDec,
+                    _ => true
+                };
+            }
 
-        // 专有 decimal 字段的条件判断
-        private bool ApplyDecimalCondition(decimal? source, string op, string valueStr)
-        {
-            if (!decimal.TryParse(valueStr, out var value)) return false;
-            if (!source.HasValue) return false;
-
-            return op switch
+            // int 处理
+            int? intNullable = propValue as int?;
+            if (intNullable.HasValue)
             {
-                "==" => source.Value == value,
-                "!=" => source.Value != value,
-                ">" => source.Value > value,
-                ">=" => source.Value >= value,
-                "<" => source.Value < value,
-                "<=" => source.Value <= value,
-                _ => false
-            };
+                if (!int.TryParse(ruleVal, out var ruleInt)) return false;
+                var actualInt = intNullable.Value;
+                return op switch
+                {
+                    "==" => actualInt == ruleInt,
+                    "!=" => actualInt != ruleInt,
+                    ">" => actualInt > ruleInt,
+                    ">=" => actualInt >= ruleInt,
+                    "<" => actualInt < ruleInt,
+                    "<=" => actualInt <= ruleInt,
+                    _ => true
+                };
+            }
+            else if (propValue is int intVal)
+            {
+                if (!int.TryParse(ruleVal, out var ruleInt)) return false;
+                return op switch
+                {
+                    "==" => intVal == ruleInt,
+                    "!=" => intVal != ruleInt,
+                    ">" => intVal > ruleInt,
+                    ">=" => intVal >= ruleInt,
+                    "<" => intVal < ruleInt,
+                    "<=" => intVal <= ruleInt,
+                    _ => true
+                };
+            }
+
+            // bool 处理
+            bool? boolNullable = propValue as bool?;
+            if (boolNullable.HasValue)
+            {
+                if (!bool.TryParse(ruleVal, out var ruleBool)) return false;
+                var actualBool = boolNullable.Value;
+                return op switch
+                {
+                    "==" => actualBool == ruleBool,
+                    "!=" => actualBool != ruleBool,
+                    _ => true
+                };
+            }
+            else if (propValue is bool boolVal)
+            {
+                if (!bool.TryParse(ruleVal, out var ruleBool)) return false;
+                return op switch
+                {
+                    "==" => boolVal == ruleBool,
+                    "!=" => boolVal != ruleBool,
+                    _ => true
+                };
+            }
+
+            // DateTime 处理
+            DateTime? dtNullable = propValue as DateTime?;
+            if (dtNullable.HasValue)
+            {
+                if (!DateTime.TryParse(ruleVal, out var ruleDt)) return false;
+                var actualDt = dtNullable.Value;
+                return op switch
+                {
+                    "==" => actualDt == ruleDt,
+                    "!=" => actualDt != ruleDt,
+                    ">" => actualDt > ruleDt,
+                    ">=" => actualDt >= ruleDt,
+                    "<" => actualDt < ruleDt,
+                    "<=" => actualDt <= ruleDt,
+                    _ => true
+                };
+            }
+            else if (propValue is DateTime dtVal)
+            {
+                if (!DateTime.TryParse(ruleVal, out var ruleDt)) return false;
+                return op switch
+                {
+                    "==" => dtVal == ruleDt,
+                    "!=" => dtVal != ruleDt,
+                    ">" => dtVal > ruleDt,
+                    ">=" => dtVal >= ruleDt,
+                    "<" => dtVal < ruleDt,
+                    "<=" => dtVal <= ruleDt,
+                    _ => true
+                };
+            }
+
+            // 其他类型默认通过
+            return true;
         }
+
 
         private void ValidateRequired()
         {
@@ -319,6 +394,8 @@ namespace ShipmentData
             summaryFileList.Clear();
             txtShipmentDataPath.Clear();
             txtSNListFilePath.Clear();
+            _savedFilterRules.Clear();
+            lblFilterStatus.Visible = false;
         }
 
         private void btnAddFilter_Click(object sender, EventArgs e)

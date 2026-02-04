@@ -20,6 +20,7 @@ namespace ShipmentData.Models
         public string Temp { get; set; } = "RT";
 
         [DisplayName("Test Result")]
+        [ExcludeFromFilter]
         public string Result { get; set; } = "Pass";
 
         [DisplayName("Heater_Resistance")]

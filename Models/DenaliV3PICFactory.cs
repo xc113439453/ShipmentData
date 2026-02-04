@@ -7,6 +7,7 @@ public class DenaliV3PICFactory<TSummary, TProduct> : DenaliV3Factory<TSummary, 
     where TSummary : ISummaryModel, new()
     where TProduct : BaseProductModel, IProductModel, new()
 {
+    public override string AmountCellAddress => "I5";
     public override List<ISummaryModel> ReadSummaryFile(List<SummaryFileInfoItem> files)
     {
         List<TSummary> list = new();
