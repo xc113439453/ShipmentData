@@ -100,7 +100,29 @@ namespace ShipmentData
                 var finalList = productList
                     .Where(item => !badSNs.Contains(item.SN))  // 假设有 SN 属性
                     .ToList();
-                // 第四步：写入文件
+
+                // 第四步：重新生成编号
+                if (finalList.Any())
+                {
+                    // 按 SN 分组，并排序（可选：按原始顺序或其他字段）
+                    var groupedBySN = finalList
+                        .GroupBy(item => item.SN)
+                        .ToList();
+
+                    int currentNo = 1;
+
+                    foreach (var group in groupedBySN)
+                    {
+                        // 同一个 SN 的所有记录都用同一个序号
+                        foreach (var item in group)
+                        {
+                            item.No = currentNo;
+                        }
+                        currentNo++;
+                    }
+                }
+
+                // 第五步：写入文件
                 factory.WriteBackToShipmentDataFile(filePath, finalList);
 
                 MessageBox.Show($"处理完成！\n原始记录：{productList.DistinctBy(t => t.SN).Count()} Pcs      过滤后：{finalList.DistinctBy(t => t.SN).Count()} Pcs", "info");
@@ -370,20 +392,14 @@ namespace ShipmentData
                 MessageBox.Show("请选中要删除的行", "提示",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
-            }
-
-            for (int i = lvSummaryFiles.SelectedItems.Count - 1; i >= 0; i--)
-            {
-                ListViewItem item = lvSummaryFiles.SelectedItems[i];
-                lvSummaryFiles.Items.Remove(item);  // 从 ListView 中移除该行
-            }
-
+            } 
             foreach (ListViewItem item in lvSummaryFiles.SelectedItems)
             {
                 SummaryFileInfoItem fileItem = item.Tag as SummaryFileInfoItem;
                 if (fileItem != null)
                 {
                     summaryFileList.Remove(fileItem);
+                    lvSummaryFiles.Items.Remove(item);
                 }
             }
         }
